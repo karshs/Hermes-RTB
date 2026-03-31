@@ -1,12 +1,15 @@
 const express = require('express');
+const auctionRoutes = require('./routes/auction.routes');
 
 const app = express();
 const PORT = 3000;
 
-// Middleware: teaches Express to read JSON from requests
 app.use(express.json());
 
-// my first route
+// Mount routes
+app.use('/auctions', auctionRoutes);
+
+// Base route
 app.get('/', (req, res) => {
     res.json({ message: 'Hermes-RTB is alive!' });
 });
