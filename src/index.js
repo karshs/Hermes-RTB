@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const pool = require('./config/db');
 const auctionRoutes = require('./routes/auction.routes');
 
 const app = express();
