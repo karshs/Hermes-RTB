@@ -110,4 +110,11 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getMe = async (req, res) => {
+    res.json({
+        success: true,
+        user: req.user
+    });
+};
+
+module.exports = { register, login, getMe };
