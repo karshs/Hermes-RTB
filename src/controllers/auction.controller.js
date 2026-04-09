@@ -1,21 +1,255 @@
-// GET /auctions
-const getAllAuctions = (req, res) => {
-    res.json({
-        success: true,
-        data: [
-            { id: 1, title: 'Vintage Watch', startPrice: 500, status: 'active' },
-            { id: 2, title: 'Antique Lamp', startPrice: 200, status: 'active' },
-        ]
-    });
+const pool = require('../config/db');
+
+// GET /auctions - get all active auctions
+const getAllAuctions = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+        a.id,
+        a.title,
+        a.description,
+        a.start_price,
+        a.current_price,
+        a.status,
+        a.end_time,
+        a.created_at,
+        u.username AS seller
+       FROM auctions a
+       JOIN users u ON a.seller_id = u.id
+       WHERE a.status = 'active'
+       ORDER BY a.created_at DESC`
+        );
+
+        res.json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+
+    } catch (err) {
+        console.error('getAllAuctions error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
 
-// GET /auctions/:id
-const getAuctionById = (req, res) => {
-    const { id } = req.params;
-    res.json({
-        success: true,
-        data: { id, title: 'Vintage Watch', startPrice: 500, status: 'active' }
-    });
+// GET /auctions/:id - get single auction with highest bid
+const getAuctionById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get auction details
+        const auctionResult = await pool.query(
+            `SELECT 
+        a.*,
+        u.username AS seller
+       FROM auctions a
+       JOIN users u ON a.seller_id = u.id
+       WHERE a.id = $1`,
+            [id]
+        );
+
+        if (auctionResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Auction not found'
+            });
+        }
+
+        // Get highest bid for this auction
+        const bidResult = await pool.query(
+            `SELECT 
+        b.amount,
+        u.username AS bidder
+       FROM bids b
+       JOIN users u ON b.user_id = u.id
+       WHERE b.auction_id = $1
+       ORDER BY b.amount DESC
+       LIMIT 1`,
+            [id]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                ...auctionResult.rows[0],
+                highest_bid: bidResult.rows[0] || null
+            }
+        });
+
+    } catch (err) {
+        console.error('getAuctionById error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
 };
 
-module.exports = { getAllAuctions, getAuctionById };
+// POST /auctions - create an auction
+const createAuction = async (req, res) => {
+    try {
+        const { title, description, start_price, end_time } = req.body;
+        const seller_id = req.user.id;
+
+        // Validate required fields
+        if (!title || !start_price || !end_time) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title, start price and end time are required'
+            });
+        }
+
+        // Validate end_time is in the future
+        if (new Date(end_time) <= new Date()) {
+            return res.status(400).json({
+                success: false,
+                message: 'End time must be in the future'
+            });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO auctions 
+        (title, description, start_price, current_price, seller_id, end_time)
+       VALUES ($1, $2, $3, $3, $4, $5)
+       RETURNING *`,
+            [title, description, start_price, seller_id, end_time]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Auction created successfully',
+            data: result.rows[0]
+        });
+
+    } catch (err) {
+        console.error('createAuction error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+
+// POST /auctions/:id/bid - place a bid
+const placeBid = async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+        const { id } = req.params;
+        const { amount } = req.body;
+        const user_id = req.user.id;
+
+        // Validate bid amount
+        if (!amount || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid bid amount is required'
+            });
+        }
+
+        // START TRANSACTION
+        await client.query('BEGIN');
+
+        // LOCK the auction row so nobody else can touch it
+        const auctionResult = await client.query(
+            `SELECT * FROM auctions 
+       WHERE id = $1 
+       FOR UPDATE`,
+            [id]
+        );
+
+        // Check auction exists
+        if (auctionResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                success: false,
+                message: 'Auction not found'
+            });
+        }
+
+        const auction = auctionResult.rows[0];
+
+        // Check auction is still active
+        if (auction.status !== 'active') {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Auction is no longer active'
+            });
+        }
+
+        // Check auction hasn't expired
+        if (new Date(auction.end_time) <= new Date()) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Auction has ended'
+            });
+        }
+
+        // Check bid is higher than current price
+        if (parseFloat(amount) <= parseFloat(auction.current_price)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: `Bid must be higher than current price of ${auction.current_price}`
+            });
+        }
+
+        // Check user is not bidding on their own auction
+        if (auction.seller_id === user_id) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot bid on your own auction'
+            });
+        }
+
+        // Check user has enough balance
+        const userResult = await client.query(
+            'SELECT balance FROM users WHERE id = $1',
+            [user_id]
+        );
+
+        if (parseFloat(userResult.rows[0].balance) < parseFloat(amount)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: 'Insufficient balance'
+            });
+        }
+
+        // INSERT the bid
+        const bidResult = await client.query(
+            `INSERT INTO bids (auction_id, user_id, amount)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+            [id, user_id, amount]
+        );
+
+        // UPDATE auction current price
+        await client.query(
+            `UPDATE auctions 
+       SET current_price = $1 
+       WHERE id = $2`,
+            [amount, id]
+        );
+
+        // COMMIT — make it all permanent
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            success: true,
+            message: 'Bid placed successfully',
+            data: {
+                bid: bidResult.rows[0],
+                auction_id: id,
+                new_current_price: amount
+            }
+        });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('placeBid error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
+module.exports = { getAllAuctions, getAuctionById, createAuction };
