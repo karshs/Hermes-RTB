@@ -233,6 +233,16 @@ const placeBid = async (req, res) => {
         // COMMIT — make it all permanent
         await client.query('COMMIT');
 
+        // BROADCAST to all users watching this auction
+        const io = req.app.get('io');
+        io.to(`auction_${id}`).emit('new_bid', {
+            auction_id: id,
+            amount: amount,
+            bidder: req.user.username,
+            new_current_price: amount,
+            timestamp: new Date()
+        });
+
         res.status(201).json({
             success: true,
             message: 'Bid placed successfully',
@@ -252,4 +262,4 @@ const placeBid = async (req, res) => {
     }
 };
 
-module.exports = { getAllAuctions, getAuctionById, createAuction };
+module.exports = { getAllAuctions, getAuctionById, createAuction, placeBid };

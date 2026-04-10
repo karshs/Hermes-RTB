@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hermes-RTB Live Test</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h1>Hermes-RTB Live Auction Test</h1>
+  <p>Status: <span id="status">Connecting...</span></p>
+  <p>Auction Room: <span id="room">None</span></p>
+  <div id="bids"></div>
+
+  <script>
+    const socket = io('http://localhost:3000');
+
+    socket.on('connect', () => {
+      document.getElementById('status').innerText = '🟢 Connected! Socket ID: ' + socket.id;
+      
+      // Join auction room 1
+      socket.emit('join_auction', 1);
+      document.getElementById('room').innerText = 'auction_1';
+    });
+
+    // Listen for new bids
+    socket.on('new_bid', (data) => {
+      const div = document.getElementById('bids');
+      div.innerHTML += `
+        <p>🔨 New bid by <b>${data.bidder}</b>: 
+           ₹${data.new_current_price} 
+           at ${new Date(data.timestamp).toLocaleTimeString()}
+        </p>`;
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('status').innerText = '🔴 Disconnected';
+    });
+  </script>
+</body>
+</html>
