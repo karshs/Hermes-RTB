@@ -1,8 +1,24 @@
 const pool = require('../config/db');
+const redis = require('../config/redis');
 
 // GET /auctions - get all active auctions
 const getAllAuctions = async (req, res) => {
     try {
+        // 1. Check Redis cache first
+        const cached = await redis.get('all_auctions');
+
+        if (cached) {
+            console.log('⚡ Serving from Redis cache');
+            return res.json({
+                success: true,
+                source: 'cache',
+                count: cached.length,
+                data: cached
+            });
+        }
+
+        // 2. Cache miss — hit the database
+        console.log('🔍 Cache miss — hitting database');
         const result = await pool.query(
             `SELECT 
         a.id,
@@ -20,8 +36,12 @@ const getAllAuctions = async (req, res) => {
        ORDER BY a.created_at DESC`
         );
 
+        // 3. Store in Redis for 30 seconds
+        await redis.set('all_auctions', JSON.stringify(result.rows), { ex: 30 });
+
         res.json({
             success: true,
+            source: 'database',
             count: result.rows.length,
             data: result.rows
         });
@@ -37,7 +57,20 @@ const getAuctionById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Get auction details
+        // 1. Check Redis cache first
+        const cached = await redis.get(`auction_${id}`);
+
+        if (cached) {
+            console.log(`⚡ Serving auction ${id} from cache`);
+            return res.json({
+                success: true,
+                source: 'cache',
+                data: cached
+            });
+        }
+
+        // 2. Cache miss — hit database
+        console.log(`🔍 Cache miss for auction ${id} — hitting database`);
         const auctionResult = await pool.query(
             `SELECT 
         a.*,
@@ -55,7 +88,6 @@ const getAuctionById = async (req, res) => {
             });
         }
 
-        // Get highest bid for this auction
         const bidResult = await pool.query(
             `SELECT 
         b.amount,
@@ -68,12 +100,18 @@ const getAuctionById = async (req, res) => {
             [id]
         );
 
+        const data = {
+            ...auctionResult.rows[0],
+            highest_bid: bidResult.rows[0] || null
+        };
+
+        // 3. Store in Redis for 10 seconds
+        await redis.set(`auction_${id}`, JSON.stringify(data), { ex: 10 });
+
         res.json({
             success: true,
-            data: {
-                ...auctionResult.rows[0],
-                highest_bid: bidResult.rows[0] || null
-            }
+            source: 'database',
+            data
         });
 
     } catch (err) {
@@ -233,6 +271,11 @@ const placeBid = async (req, res) => {
         // COMMIT — make it all permanent
         await client.query('COMMIT');
 
+        // Invalidate cache so next request gets fresh data
+        await redis.del(`auction_${id}`);
+        await redis.del('all_auctions');
+        console.log(`🗑️ Cache invalidated for auction ${id}`);
+
         // BROADCAST to all users watching this auction
         const io = req.app.get('io');
         io.to(`auction_${id}`).emit('new_bid', {
@@ -261,5 +304,7 @@ const placeBid = async (req, res) => {
         client.release();
     }
 };
+
+
 
 module.exports = { getAllAuctions, getAuctionById, createAuction, placeBid };

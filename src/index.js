@@ -4,6 +4,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const pool = require('./config/db');
+const redis = require('./config/redis'); // add this
 const auctionRoutes = require('./routes/auction.routes');
 const authRoutes = require('./routes/auth.routes');
 
