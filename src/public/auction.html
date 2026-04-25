@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auction — Hermes-RTB</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .auction-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      padding: 40px 0 60px;
+    }
+
+    .auction-main h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .auction-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    .auction-description {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+
+    /* BID HISTORY */
+    .bid-history h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .bid-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bid-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .bid-item.top-bid {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+
+    .bid-amount {
+      font-weight: 600;
+    }
+
+    .bid-bidder {
+      color: var(--muted);
+    }
+
+    .bid-time {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SIDEBAR */
+    .auction-sidebar {
+      position: sticky;
+      top: 80px;
+      height: fit-content;
+    }
+
+    .price-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .current-price-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .current-price {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--text);
+      margin-bottom: 4px;
+      transition: color 0.3s;
+    }
+
+    .current-price.updated {
+      color: var(--accent);
+    }
+
+    .highest-bidder {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+
+    .timer.urgent {
+      color: var(--danger);
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    .bid-input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .bid-input-group input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+
+    .bid-input-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .place-bid-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 11px;
+      font-size: 14px;
+    }
+
+    .bid-hint {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--success);
+      margin-bottom: 16px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .login-prompt {
+      text-align: center;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .login-prompt a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">Hermes-RTB</a>
+    <div class="nav-links">
+      <a href="auctions.html" class="btn btn-ghost">← All Auctions</a>
+      <span id="nav-user" style="font-size:13px; color:var(--muted)"></span>
+      <a href="login.html" class="btn btn-ghost" id="nav-auth-btn">Login</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div id="loading" class="loading">Loading auction...</div>
+    <div class="auction-layout" id="auction-layout" style="display:none">
+
+      <!-- MAIN -->
+      <div class="auction-main">
+        <h1 id="auction-title"></h1>
+        <div class="auction-meta">
+          <span class="badge badge-active" id="auction-status">Live</span>
+          <span>Listed by <strong id="auction-seller"></strong></span>
+          <span id="auction-date"></span>
+        </div>
+
+        <div class="auction-description" id="auction-description"></div>
+
+        <div class="bid-history">
+          <h3>Bid History</h3>
+          <div class="bid-list" id="bid-list">
+            <div class="loading">No bids yet — be the first!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="auction-sidebar">
+        <div class="live-indicator">
+          <div class="live-dot"></div>
+          Live updates enabled
+        </div>
+
+        <div class="price-card">
+          <div class="current-price-label">Current Price</div>
+          <div class="current-price" id="current-price">₹0</div>
+          <div class="highest-bidder" id="highest-bidder">No bids yet</div>
+
+          <div class="timer" id="timer">⏱ Loading...</div>
+
+          <div id="bid-section"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const auctionId = params.get('id');
+
+    if (!auctionId) window.location.href = 'auctions.html';
+
+    let currentPrice = 0;
+    let socket = null;
+
+    // Update nav
+    const user = getUser();
+    if (user) {
+      document.getElementById('nav-user').textContent = `Hi, ${user.username}`;
+      const authBtn = document.getElementById('nav-auth-btn');
+      authBtn.textContent = 'Logout';
+      authBtn.href = '#';
+      authBtn.onclick = () => { clearAuth(); location.reload(); };
+    }
+
+    // Format time
+    const formatTime = (endTime) => {
+      const diff = new Date(endTime) - new Date();
+      if (diff <= 0) return null;
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      if (days > 0) return `${days}d ${hours}h remaining`;
+      if (hours > 0) return `${hours}h ${mins}m remaining`;
+      return `${mins}m ${secs}s remaining`;
+    };
+
+    // Update price with animation
+    const updatePrice = (price, bidder) => {
+      const el = document.getElementById('current-price');
+      el.textContent = `₹${Number(price).toLocaleString()}`;
+      el.classList.add('updated');
+      setTimeout(() => el.classList.remove('updated'), 1000);
+      currentPrice = Number(price);
+
+      if (bidder) {
+        document.getElementById('highest-bidder').textContent = `Highest bid by ${bidder}`;
+      }
+
+      // Update bid hint
+      const hint = document.getElementById('bid-hint');
+      if (hint) hint.textContent = `Must be higher than ₹${Number(price).toLocaleString()}`;
+    };
+
+    // Add bid to history
+    const addBidToHistory = (amount, bidder, time, isTop = false) => {
+      const list = document.getElementById('bid-list');
+
+      // Remove "no bids" message
+      if (list.querySelector('.loading')) list.innerHTML = '';
+
+      // Remove top-bid class from previous top
+      document.querySelectorAll('.bid-item').forEach(b => b.classList.remove('top-bid'));
+
+      const item = document.createElement('div');
+      item.className = `bid-item${isTop ? ' top-bid' : ''}`;
+      item.innerHTML = `
+        <div>
+          <span class="bid-amount">₹${Number(amount).toLocaleString()}</span>
+          <span class="bid-bidder"> by ${bidder}</span>
+        </div>
+        <span class="bid-time">${new Date(time).toLocaleTimeString()}</span>
+      `;
+      list.insertBefore(item, list.firstChild);
+    };
+
+    // Render bid section
+    const renderBidSection = (auction) => {
+      const section = document.getElementById('bid-section');
+      const ended = new Date(auction.end_time) <= new Date();
+
+      if (ended || auction.status !== 'active') {
+        section.innerHTML = `
+          <div style="text-align:center; padding: 16px 0; color: var(--muted); font-size:13px">
+            This auction has ended
+            ${auction.winner_id ? `<br><strong>Winner declared!</strong>` : ''}
+          </div>`;
+        return;
+      }
+
+      if (!isLoggedIn()) {
+        section.innerHTML = `
+          <div class="login-prompt">
+            <a href="login.html">Login</a> or 
+            <a href="login.html">Register</a> to place a bid
+          </div>`;
+        return;
+      }
+
+      section.innerHTML = `
+        <div class="bid-input-group">
+          <input type="number" id="bid-amount" placeholder="Enter amount" min="${currentPrice + 1}" />
+          <button class="btn btn-primary" onclick="placeBid()">Bid</button>
+        </div>
+        <button class="btn btn-primary place-bid-btn" onclick="placeBid()">
+          Place Bid
+        </button>
+        <div class="bid-hint" id="bid-hint">
+          Must be higher than ₹${Number(currentPrice).toLocaleString()}
+        </div>
+        <div id="bid-alert" style="margin-top:12px"></div>
+      `;
+    };
+
+    // Place bid
+    const placeBid = async () => {
+      const input = document.getElementById('bid-amount');
+      const amount = parseFloat(input.value);
+      const alertEl = document.getElementById('bid-alert');
+
+      if (!amount || amount <= currentPrice) {
+        alertEl.innerHTML = `<div class="alert alert-error">Bid must be higher than ₹${currentPrice.toLocaleString()}</div>`;
+        return;
+      }
+
+      try {
+        await api.placeBid(auctionId, amount);
+        input.value = '';
+        alertEl.innerHTML = `<div class="alert alert-success">Bid placed successfully!</div>`;
+        setTimeout(() => alertEl.innerHTML = '', 3000);
+      } catch (err) {
+        alertEl.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    };
+
+    // Connect WebSocket
+    const connectSocket = () => {
+      socket = io('https://hermes-rtb.onrender.com');
+
+      socket.on('connect', () => {
+        socket.emit('join_auction', auctionId);
+      });
+
+      socket.on('new_bid', (data) => {
+        updatePrice(data.new_current_price, data.bidder);
+        addBidToHistory(data.new_current_price, data.bidder, data.timestamp, true);
+      });
+    };
+
+    // Load auction
+    const loadAuction = async () => {
+      try {
+        const res = await api.getAuction(auctionId);
+        const auction = res.data;
+
+        document.title = `${auction.title} — Hermes-RTB`;
+        document.getElementById('auction-title').textContent = auction.title;
+        document.getElementById('auction-seller').textContent = auction.seller;
+        document.getElementById('auction-description').textContent = auction.description || 'No description provided.';
+        document.getElementById('auction-date').textContent = new Date(auction.created_at).toLocaleDateString();
+
+        currentPrice = Number(auction.current_price);
+        updatePrice(auction.current_price, auction.highest_bid?.bidder);
+
+        // Timer
+        const timerEl = document.getElementById('timer');
+        const updateTimer = () => {
+          const remaining = formatTime(auction.end_time);
+          if (!remaining) {
+            timerEl.textContent = '⏱ Auction ended';
+            timerEl.classList.remove('urgent');
+          } else {
+            timerEl.textContent = `⏱ ${remaining}`;
+            const diff = new Date(auction.end_time) - new Date();
+            timerEl.classList.toggle('urgent', diff < 3600000);
+          }
+        };
+        updateTimer();
+        setInterval(updateTimer, 1000);
+
+        // Bid history
+        if (auction.highest_bid) {
+          addBidToHistory(
+            auction.highest_bid.amount,
+            auction.highest_bid.bidder,
+            new Date(),
+            true
+          );
+        }
+
+        renderBidSection(auction);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('auction-layout').style.display = 'grid';
+
+        connectSocket();
+
+      } catch (err) {
+        document.getElementById('loading').textContent = 'Failed to load auction.';
+      }
+    };
+
+    loadAuction();
+  </script>
+
+</body>
+</html>
