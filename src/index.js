@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const cors = require('cors');
 const pool = require('./config/db');
 const redis = require('./config/redis'); // add this
 const auctionRoutes = require('./routes/auction.routes');
@@ -22,6 +23,7 @@ const io = new Server(server, {
     }
 });
 
+app.use(cors());
 app.use(express.json());
 app.use(express.static('src/public'));
 app.use('/auth', authRoutes);

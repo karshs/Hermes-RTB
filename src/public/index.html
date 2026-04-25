@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes-RTB — Real-Time Auction Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eff6ff;
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .hero-actions .btn {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+
+    /* STATS */
+    .stats {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      gap: 32px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* HOW IT WORKS */
+    .section {
+      padding: 80px 0;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+
+    .section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 48px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .step {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .step h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* TECH STACK */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .tech-card {
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .tech-card h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .tech-card p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .tech-tag {
+      display: inline-block;
+      background: #eff6ff;
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-logo">Hermes-RTB</a>
+    <div class="nav-links">
+      <a href="auctions.html" class="btn btn-ghost">Browse Auctions</a>
+      <a href="login.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="container">
+    <div class="hero">
+      <div class="hero-badge">
+         Real-time bidding engine
+      </div>
+      <h1>Auctions that happen at the <span>speed of now</span></h1>
+      <p>
+        A high-concurrency bidding platform built with row-level locking,
+        WebSockets and Redis — engineered so no two users ever win at the same price.
+      </p>
+      <div class="hero-actions">
+        <a href="auctions.html" class="btn btn-primary">Browse Auctions</a>
+        <a href="login.html" class="btn btn-ghost">Create Account</a>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div>
+        <div class="stat-value">100%</div>
+        <div class="stat-label">ACID Compliant Transactions</div>
+      </div>
+      <div>
+        <div class="stat-value">&lt;100ms</div>
+        <div class="stat-label">Bid Broadcast Latency</div>
+      </div>
+      <div>
+        <div class="stat-value">~65%</div>
+        <div class="stat-label">DB Load Reduction via Redis</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="container">
+    <div class="section">
+      <div class="section-label">How it works</div>
+      <h2>The Atomic Bid — engineered for correctness</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Bid comes in</h3>
+          <p>User places a bid. Server validates auction is active and bid is higher than current price.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Row-level lock</h3>
+          <p>PostgreSQL locks the auction row with SELECT FOR UPDATE. No other request can touch it.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Atomic commit</h3>
+          <p>Bid inserted and price updated in one transaction. Either both happen or neither does.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h3>Live broadcast</h3>
+          <p>Socket.io broadcasts new price to all connected users in under 100ms. No refresh needed.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">5</div>
+          <h3>Cache invalidated</h3>
+          <p>Redis cache cleared instantly so next request fetches fresh data from PostgreSQL.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">6</div>
+          <h3>Winner declared</h3>
+          <p>When timer hits zero, the highest bidder wins. One winner, always. Guaranteed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div style="background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="container">
+      <div class="section">
+        <div class="section-label">Tech Stack</div>
+        <h2>Built with the right tools for the job</h2>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-tag">Backend</div>
+            <h4>Node.js + Express</h4>
+            <p>REST API with modular routes and controllers</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-tag">Database</div>
+            <h4>PostgreSQL</h4>
+            <p>ACID transactions and row-level locking via Neon</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-tag">Real-time</div>
+            <h4>Socket.io</h4>
+            <p>WebSocket rooms per auction for live bid updates</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-tag">Cache</div>
+            <h4>Redis</h4>
+            <p>Cache-aside pattern with smart invalidation via Upstash</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-tag">Auth</div>
+            <h4>JWT + bcryptjs</h4>
+            <p>Stateless auth with hashed passwords and protected routes</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-tag">Deployment</div>
+            <h4>Render</h4>
+            <p>Production deployment with environment variable management</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>Hermes-RTB — Built from scratch as a systems engineering project</p>
+      <p class="mt-8">
+        <a href="https://github.com/karshs/Hermes-RTB" target="_blank">GitHub</a>
+        · 
+        <a href="auctions.html">Browse Auctions</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
