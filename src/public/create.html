@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Auction — Hermes-RTB</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .create-wrapper {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 48px 0 80px;
+    }
+
+    .create-header {
+      margin-bottom: 32px;
+    }
+
+    .create-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+
+    .create-header p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 11px;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      resize: vertical;
+      min-height: 100px;
+      transition: border 0.15s;
+      color: var(--text);
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .preview-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 32px;
+      background: var(--surface);
+    }
+
+    .preview-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .preview-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .preview-price {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+      margin: 12px 0 4px;
+    }
+
+    .preview-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">Hermes-RTB</a>
+    <div class="nav-links">
+      <a href="auctions.html" class="btn btn-ghost">← All Auctions</a>
+      <span id="nav-user" style="font-size:13px; color:var(--muted); margin-right:8px"></span>
+      <a href="#" class="btn btn-ghost" id="logout-btn">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="create-wrapper">
+
+      <div class="create-header">
+        <h1>Create New Auction</h1>
+        <p>List an item and let the bidding begin</p>
+      </div>
+
+      <div id="alert" style="display:none"></div>
+
+      <div class="form-group">
+        <label>Item Title</label>
+        <input type="text" id="title" placeholder="e.g. Vintage Gibson Guitar 1959"
+          oninput="updatePreview()" />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="description" placeholder="Describe your item — condition, history, details..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Starting Price (₹)</label>
+          <input type="number" id="start-price" placeholder="1000"
+            oninput="updatePreview()" min="1" />
+        </div>
+        <div class="form-group">
+          <label>End Date & Time</label>
+          <input type="datetime-local" id="end-time" oninput="updatePreview()" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary submit-btn" onclick="handleCreate()">
+        List Auction
+      </button>
+
+      <!-- LIVE PREVIEW -->
+      <div class="preview-card">
+        <div class="preview-label">Live Preview</div>
+        <div class="preview-title" id="preview-title">Your item title</div>
+        <div class="preview-price" id="preview-price">₹0</div>
+        <div class="preview-time" id="preview-time">End time not set</div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Redirect if not logged in
+    if (!isLoggedIn()) window.location.href = 'login.html';
+
+    const user = getUser();
+    document.getElementById('nav-user').textContent = `Hi, ${user.username}`;
+    document.getElementById('logout-btn').onclick = () => {
+      clearAuth();
+      window.location.href = 'login.html';
+    };
+
+    // Set minimum end time to 1 hour from now
+    const minTime = new Date(Date.now() + 3600000).toISOString().slice(0, 16);
+    document.getElementById('end-time').min = minTime;
+
+    // Live preview
+    const updatePreview = () => {
+      const title = document.getElementById('title').value;
+      const price = document.getElementById('start-price').value;
+      const endTime = document.getElementById('end-time').value;
+
+      document.getElementById('preview-title').textContent = title || 'Your item title';
+      document.getElementById('preview-price').textContent =
+        price ? `₹${Number(price).toLocaleString()}` : '₹0';
+      document.getElementById('preview-time').textContent =
+        endTime ? `Ends ${new Date(endTime).toLocaleString()}` : 'End time not set';
+    };
+
+    const showAlert = (message, type = 'error') => {
+      const alert = document.getElementById('alert');
+      alert.className = `alert alert-${type}`;
+      alert.textContent = message;
+      alert.style.display = 'block';
+      window.scrollTo(0, 0);
+    };
+
+    const handleCreate = async () => {
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const start_price = document.getElementById('start-price').value;
+      const end_time = document.getElementById('end-time').value;
+
+      if (!title || !start_price || !end_time) {
+        return showAlert('Please fill in all required fields');
+      }
+
+      if (new Date(end_time) <= new Date()) {
+        return showAlert('End time must be in the future');
+      }
+
+      try {
+        const res = await api.createAuction({
+          title,
+          description,
+          start_price: Number(start_price),
+          end_time: new Date(end_time).toISOString()
+        });
+
+        showAlert('Auction created successfully! Redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = `auction.html?id=${res.data.id}`;
+        }, 1500);
+
+      } catch (err) {
+        showAlert(err.message);
+      }
+    };
+  </script>
+
+</body>
+</html>
