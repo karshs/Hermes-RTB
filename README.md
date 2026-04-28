@@ -1,9 +1,8 @@
-# Hermes-RTB 🚀
-### High-Concurrency Real-Time Bidding System
-
-A production-grade auction platform built to handle thousands of 
-concurrent bids with strict data integrity and zero race conditions.
-
+<div align="center">
+  <p align="center">
+    <img src="./src/public/hermes-header.png" alt="Hermes RTB Header" width="100%" />
+  </p>
+</div>
 🌍 **Live API:** https://hermes-rtb.onrender.com
 
 ---
