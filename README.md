@@ -3,6 +3,7 @@
     <img src="./src/public/hermes-header.png" alt="Hermes RTB Header" width="100%" />
   </p>
 </div>
+
 🌍 **Live API:** https://hermes-rtb.onrender.com
 
 ---
@@ -61,7 +62,7 @@ This guarantees 100% ACID compliance on every transaction.
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure (only backend)
 
 ```
 src/
