@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import { api } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
+import { useSocket } from '../hooks/useSocket'
 
 function useCountdown(endTime) {
     const [remaining, setRemaining] = useState('')
@@ -37,8 +38,8 @@ function BidItem({ amount, bidder, time, isTop }) {
     return (
         <div
             className={`flex items-center justify-between px-4 py-3 rounded-lg border text-sm animate-[slideIn_0.3s_ease] ${isTop
-                    ? 'border-blue-500/40 bg-blue-500/5'
-                    : 'border-white/5 bg-white/[0.02]'
+                ? 'border-blue-500/40 bg-blue-500/5'
+                : 'border-white/5 bg-white/[0.02]'
                 }`}
         >
             <div>
@@ -112,6 +113,17 @@ export default function AuctionDetailPage() {
 
     const isEnded = auction ? new Date(auction.end_time) <= new Date() : false
     const canBid = user && auction?.status === 'active' && !isEnded
+
+    // Handle incoming live bids from other users via WebSocket
+    const handleNewBid = useCallback((data) => {
+        flashPrice(data.new_current_price, data.bidder)
+        setBids((prev) => [
+            { amount: data.new_current_price, bidder: data.bidder, time: data.timestamp, isTop: true },
+            ...prev.map((b) => ({ ...b, isTop: false })),
+        ])
+    }, [])
+
+    useSocket(id, { onNewBid: handleNewBid })
 
     const handleBid = async (e) => {
         e.preventDefault()
@@ -191,8 +203,8 @@ export default function AuctionDetailPage() {
                             <div className="flex items-center gap-3 mb-2">
                                 <span
                                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${isEnded
-                                            ? 'bg-slate-700 text-slate-400'
-                                            : 'bg-green-500/10 text-green-400'
+                                        ? 'bg-slate-700 text-slate-400'
+                                        : 'bg-green-500/10 text-green-400'
                                         }`}
                                 >
                                     {!isEnded && (
@@ -269,8 +281,8 @@ export default function AuctionDetailPage() {
                             {/* Timer */}
                             <div
                                 className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg mb-4 ${urgent
-                                        ? 'bg-red-500/10 border border-red-500/20 text-red-400'
-                                        : 'bg-white/5 border border-white/5 text-slate-400'
+                                    ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                    : 'bg-white/5 border border-white/5 text-slate-400'
                                     }`}
                             >
                                 ⏱ {remaining}
