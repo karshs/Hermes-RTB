@@ -38,7 +38,7 @@ if (isProd) {
     app.use(express.static(distPath));
 
     // All non-API routes go to React's index.html (client-side routing)
-    app.get('*', (req, res) => {
+    app.get('/{*path}', (req, res) => {
         res.sendFile(path.join(distPath, 'index.html'));
     });
 } else {
