@@ -37,6 +37,8 @@ export const api = {
     login: (body) =>
         apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
     getMe: () => apiFetch('/auth/me'),
+    topUp: () => apiFetch('/auth/topup', { method: 'POST' }),
+    getMyBids: () => apiFetch('/auth/bids'),
 
     // Auctions
     getAuctions: () => apiFetch('/auctions'),

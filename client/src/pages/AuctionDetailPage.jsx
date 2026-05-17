@@ -58,7 +58,7 @@ function BidItem({ amount, bidder, time, isTop }) {
 export default function AuctionDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, refreshUser } = useAuth()
 
     const [auction, setAuction] = useState(null)
     const [bids, setBids] = useState([])
@@ -146,6 +146,8 @@ export default function AuctionDetailPage() {
                 { amount, bidder: user.username, time: new Date(), isTop: true },
                 ...prev.map((b) => ({ ...b, isTop: false })),
             ])
+            // Refresh balance in navbar
+            refreshUser()
         } catch (err) {
             setBidError(err.message)
         } finally {

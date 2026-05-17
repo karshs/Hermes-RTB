@@ -26,9 +26,22 @@ export default function Navbar() {
 
                 {user ? (
                     <>
-                        <span className="text-sm text-slate-400">
-                            Hi, {user.username}
-                        </span>
+                        {/* Balance pill */}
+                        <Link
+                            to="/profile"
+                            className="flex items-center gap-1.5 text-xs font-medium bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-colors"
+                        >
+                            <span className="text-slate-400">₹</span>
+                            {Number(user.balance).toLocaleString('en-IN')}
+                        </Link>
+
+                        <Link
+                            to="/profile"
+                            className="text-sm text-slate-400 hover:text-white transition-colors"
+                        >
+                            {user.username}
+                        </Link>
+
                         <Link
                             to="/create"
                             className="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-1.5 rounded-lg transition-colors"

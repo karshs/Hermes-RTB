@@ -8,17 +8,14 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(() => localStorage.getItem('token'))
     const [loading, setLoading] = useState(true)
 
-    // On mount, if a token exists verify it's still valid
     useEffect(() => {
         if (!token) {
             setLoading(false)
             return
         }
-
         api.getMe()
             .then((res) => setUser(res.user))
             .catch(() => {
-                // Token is invalid or expired — clear it
                 localStorage.removeItem('token')
                 setToken(null)
             })
@@ -47,8 +44,23 @@ export function AuthProvider({ children }) {
         setUser(null)
     }, [])
 
+    // Refresh user data from server (e.g. after topup or bid)
+    const refreshUser = useCallback(async () => {
+        try {
+            const res = await api.getMe()
+            setUser(res.user)
+        } catch {
+            // silently fail
+        }
+    }, [])
+
+    // Update user in context directly (e.g. after topup returns new balance)
+    const updateUser = useCallback((updatedUser) => {
+        setUser(updatedUser)
+    }, [])
+
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser, updateUser }}>
             {children}
         </AuthContext.Provider>
     )

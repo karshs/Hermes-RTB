@@ -117,4 +117,57 @@ const getMe = async (req, res) => {
     });
 };
 
-module.exports = { register, login, getMe };
+// POST /auth/topup — add ₹100,000 to balance (demo use)
+const topUp = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE users 
+             SET balance = balance + 100000.00 
+             WHERE id = $1 
+             RETURNING id, username, email, balance`,
+            [req.user.id]
+        );
+        res.json({
+            success: true,
+            message: '₹1,00,000 added to your balance',
+            user: result.rows[0]
+        });
+    } catch (err) {
+        console.error('topUp error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// GET /auth/bids — get all bids placed by the logged-in user
+const getMyBids = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+                b.id,
+                b.amount,
+                b.created_at,
+                a.id AS auction_id,
+                a.title AS auction_title,
+                a.current_price,
+                a.status,
+                a.end_time,
+                CASE WHEN b.amount = a.current_price AND a.status = 'active' 
+                     THEN true ELSE false END AS is_highest
+             FROM bids b
+             JOIN auctions a ON b.auction_id = a.id
+             WHERE b.user_id = $1
+             ORDER BY b.created_at DESC`,
+            [req.user.id]
+        );
+        res.json({
+            success: true,
+            count: result.rows.length,
+            data: result.rows
+        });
+    } catch (err) {
+        console.error('getMyBids error:', err.message);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+module.exports = { register, login, getMe, topUp, getMyBids };

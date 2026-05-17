@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import AuctionsPage from './pages/AuctionsPage'
 import AuctionDetailPage from './pages/AuctionDetailPage'
 import CreateAuctionPage from './pages/CreateAuctionPage'
+import ProfilePage from './pages/ProfilePage'
 
 function App() {
     return (
@@ -21,6 +22,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <CreateAuctionPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <ProfilePage />
                             </ProtectedRoute>
                         }
                     />
