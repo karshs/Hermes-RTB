@@ -20,9 +20,14 @@ export default {
                     from: { opacity: '0', transform: 'translateY(-8px)' },
                     to: { opacity: '1', transform: 'translateY(0)' },
                 },
+                ticker: {
+                    from: { transform: 'translateX(0)' },
+                    to: { transform: 'translateX(-50%)' },
+                },
             },
             animation: {
                 slideIn: 'slideIn 0.3s ease',
+                ticker: 'ticker 18s linear infinite',
             },
         },
     },
