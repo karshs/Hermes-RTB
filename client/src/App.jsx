@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import LoginPage from './pages/LoginPage'
 
-// Pages — will be filled in phase by phase
+// Placeholder for pages not yet built
 const Placeholder = ({ name }) => (
     <div className="flex items-center justify-center min-h-screen text-sm text-gray-400">
         {name} page — coming soon
@@ -17,7 +18,7 @@ function App() {
                     <Route path="/" element={<Placeholder name="Home" />} />
                     <Route path="/auctions" element={<Placeholder name="Auctions" />} />
                     <Route path="/auctions/:id" element={<Placeholder name="Auction detail" />} />
-                    <Route path="/login" element={<Placeholder name="Login" />} />
+                    <Route path="/login" element={<LoginPage />} />
                     <Route
                         path="/create"
                         element={
