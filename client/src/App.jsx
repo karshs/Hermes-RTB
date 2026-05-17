@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import AuctionsPage from './pages/AuctionsPage'
 import AuctionDetailPage from './pages/AuctionDetailPage'
+import CreateAuctionPage from './pages/CreateAuctionPage'
 
 // Placeholder for pages not yet built
 const Placeholder = ({ name }) => (
@@ -25,7 +26,7 @@ function App() {
                         path="/create"
                         element={
                             <ProtectedRoute>
-                                <Placeholder name="Create auction" />
+                                <CreateAuctionPage />
                             </ProtectedRoute>
                         }
                     />
