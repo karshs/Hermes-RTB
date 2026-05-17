@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import AuctionsPage from './pages/AuctionsPage'
+import AuctionDetailPage from './pages/AuctionDetailPage'
 
 // Placeholder for pages not yet built
 const Placeholder = ({ name }) => (
@@ -18,7 +19,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Placeholder name="Home" />} />
                     <Route path="/auctions" element={<AuctionsPage />} />
-                    <Route path="/auctions/:id" element={<Placeholder name="Auction detail" />} />
+                    <Route path="/auctions/:id" element={<AuctionDetailPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route
                         path="/create"
