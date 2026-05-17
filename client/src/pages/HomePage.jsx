@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
 import Navbar from '../components/Navbar'
 import { siNodedotjs, siPostgresql, siSocketdotio, siRedis, siJsonwebtokens, siRender } from 'simple-icons'
 
-// Render a Simple Icons SVG inline
-// forceWhite overrides brand color — needed for black-logo icons on dark backgrounds
+// ── Simple Icons SVG ──────────────────────────────────────────────────────────
 function SimpleIcon({ icon, size = 28, forceWhite = false }) {
     return (
         <svg
@@ -20,23 +20,193 @@ function SimpleIcon({ icon, size = 28, forceWhite = false }) {
     )
 }
 
-// ── Bid ticker ────────────────────────────────────────────────────────────────
+// ── Bid ticker + wave line + sun dot ─────────────────────────────────────────
+const BIDS = [
+    '₹5,000.00', '₹6,200.00', '₹7,450.00', '₹8,100.50',
+    '₹9,300.00', '₹10,750.25', '₹11,200.00', '₹12,450.25',
+]
+const FINAL_BID = '₹12,450.25'
+const FINAL_INDEX = BIDS.indexOf(FINAL_BID)
+
+// Tall wave — crests and troughs cover generous vertical space
+const WAVE_PATH = 'M0,60 C80,0 160,120 250,60 C340,0 420,120 500,60 C580,0 660,120 750,60 C840,0 920,120 1000,60'
+const PATH_LENGTH = 1200
+
 function BidTicker() {
-    const price = '₹12,450.25'
-    const items = Array(12).fill(`Current Bid: ${price}`)
+    const trackRef = useRef(null)
+    const pathRef = useRef(null)
+    const [stopped, setStopped] = useState(false)
+    const [glowVisible, setGlowVisible] = useState(false)
+
+    useEffect(() => {
+        const track = trackRef.current
+        if (!track) return
+
+        const ITEM_W = 200
+        const centerOffset = (track.parentElement.offsetWidth / 2) - (ITEM_W / 2)
+        const finalX = -(FINAL_INDEX * ITEM_W) + centerOffset
+        const overshoot = finalX - 60
+
+        // Phase 1: fast scroll (0 → 950ms)
+        track.style.transition = 'transform 0.9s cubic-bezier(0.1, 0, 0.3, 1)'
+        track.style.transform = `translateX(${overshoot}px)`
+
+        // Phase 2: spring back to final (950 → 1500ms)
+        const t1 = setTimeout(() => {
+            track.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            track.style.transform = `translateX(${finalX}px)`
+        }, 950)
+
+        // Phase 3: bid stops, wave starts drawing (1500ms)
+        const t2 = setTimeout(() => {
+            setStopped(true)
+            if (pathRef.current) {
+                pathRef.current.style.transition = `stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1)`
+                pathRef.current.style.strokeDashoffset = '0'
+            }
+        }, 1500)
+
+        // Phase 4: wave done, sun dot appears (1500 + 1500ms)
+        const t3 = setTimeout(() => setGlowVisible(true), 3000)
+
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+    }, [])
 
     return (
-        <div className="relative overflow-hidden py-3 border-y border-white/10 my-8">
-            {/* fade edges */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0a0f1e] to-transparent z-10" />
-            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#0a0f1e] to-transparent z-10" />
-            <div className="flex animate-[ticker_18s_linear_infinite] whitespace-nowrap">
-                {items.map((item, i) => (
-                    <span key={i} className="mx-8 text-sm font-medium text-slate-400">
-                        <span className="text-white font-bold">{item}</span>
-                    </span>
-                ))}
+        <div className="my-8 flex flex-col items-center">
+
+            {/* ── Reel strip ── */}
+            <div className="relative w-full overflow-hidden py-3 border-y border-white/10">
+                <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#0a0f1e] to-transparent z-10 pointer-events-none" />
+                <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#0a0f1e] to-transparent z-10 pointer-events-none" />
+                <div
+                    ref={trackRef}
+                    className="flex will-change-transform"
+                    style={{ transform: 'translateX(0px)' }}
+                >
+                    {BIDS.map((bid, i) => (
+                        <div
+                            key={i}
+                            className="shrink-0 flex items-center justify-center text-sm font-semibold transition-colors duration-500"
+                            style={{
+                                width: 200,
+                                color: stopped && i === FINAL_INDEX ? '#60a5fa' : '#475569',
+                                textShadow: stopped && i === FINAL_INDEX
+                                    ? '0 0 20px rgba(96,165,250,0.5)'
+                                    : 'none',
+                            }}
+                        >
+                            Current Bid: {bid}
+                        </div>
+                    ))}
+                </div>
             </div>
+
+            {/* ── Wave stroke line + sun dot ── */}
+            <div className="relative w-full" style={{ height: 120 }}>
+                {/* SVG wave — draws left to right after bid stops */}
+                <svg
+                    viewBox="0 0 1000 120"
+                    preserveAspectRatio="none"
+                    className="absolute inset-x-0 top-0 w-full"
+                    style={{ height: 120 }}
+                    aria-hidden="true"
+                >
+                    <defs>
+                        {/* Fade mask: transparent at edges, solid in center */}
+                        <linearGradient id="waveFade" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="white" stopOpacity="0" />
+                            <stop offset="10%" stopColor="white" stopOpacity="1" />
+                            <stop offset="90%" stopColor="white" stopOpacity="1" />
+                            <stop offset="100%" stopColor="white" stopOpacity="0" />
+                        </linearGradient>
+                        <mask id="waveMask">
+                            <rect x="0" y="0" width="1000" height="120" fill="url(#waveFade)" />
+                        </mask>
+                    </defs>
+                    <path
+                        ref={pathRef}
+                        d={WAVE_PATH}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        mask="url(#waveMask)"
+                        style={{
+                            strokeDasharray: PATH_LENGTH,
+                            strokeDashoffset: PATH_LENGTH,
+                            filter: glowVisible
+                                ? 'drop-shadow(0 0 5px rgba(96,165,250,0.8)) drop-shadow(0 0 12px rgba(96,165,250,0.4))'
+                                : 'none',
+                            transition: 'filter 0.6s ease',
+                        }}
+                    />
+                </svg>
+
+                {/* Sun dot — centered on the wave, appears after wave finishes */}
+                <div
+                    className="absolute"
+                    style={{
+                        left: '50%',
+                        top: 60,
+                        transform: 'translate(-50%, -50%)',
+                        opacity: glowVisible ? 1 : 0,
+                        transition: 'opacity 0.5s ease',
+                    }}
+                >
+                    {/* Ambient radial bloom */}
+                    <div
+                        className="absolute rounded-full pointer-events-none"
+                        style={{
+                            width: 100, height: 100,
+                            left: '50%', top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            background: 'radial-gradient(circle, rgba(96,165,250,0.22) 0%, rgba(96,165,250,0.08) 45%, transparent 70%)',
+                        }}
+                    />
+                    {/* Expanding ring 1 */}
+                    <span
+                        className="absolute rounded-full border border-blue-400/25 pointer-events-none"
+                        style={{
+                            width: 32, height: 32,
+                            left: '50%', top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            animation: glowVisible ? 'sunRing 2.4s ease-out infinite' : 'none',
+                        }}
+                    />
+                    {/* Expanding ring 2 — staggered */}
+                    <span
+                        className="absolute rounded-full border border-blue-400/15 pointer-events-none"
+                        style={{
+                            width: 32, height: 32,
+                            left: '50%', top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            animation: glowVisible ? 'sunRing 2.4s ease-out 0.9s infinite' : 'none',
+                        }}
+                    />
+                    {/* Core dot */}
+                    <span
+                        className="relative block rounded-full bg-blue-400"
+                        style={{
+                            width: 8, height: 8,
+                            boxShadow: '0 0 6px 2px rgba(96,165,250,0.9), 0 0 16px 5px rgba(96,165,250,0.5), 0 0 36px 10px rgba(96,165,250,0.2)',
+                            animation: glowVisible ? 'sunPulse 2s ease-in-out infinite' : 'none',
+                        }}
+                    />
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes sunPulse {
+                    0%, 100% { transform: scale(1);    opacity: 1; }
+                    50%       { transform: scale(1.45); opacity: 0.7; }
+                }
+                @keyframes sunRing {
+                    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.55; }
+                    100% { transform: translate(-50%, -50%) scale(3.6); opacity: 0; }
+                }
+            `}</style>
         </div>
     )
 }
@@ -95,7 +265,7 @@ function DashboardCard({ label, value, chart }) {
 }
 
 // ── How it Works step ─────────────────────────────────────────────────────────
-function Step({ number, title, description, icon }) {
+function Step({ number, title, description }) {
     return (
         <div className="flex items-start gap-4 p-5 bg-white rounded-xl border border-gray-100 shadow-sm">
             <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-semibold">
@@ -164,28 +334,20 @@ export default function HomePage() {
                     </Link>
                 </div>
 
-                {/* Bid ticker */}
+                {/* Bid ticker + wave + sun dot */}
                 <BidTicker />
+            </div>
 
-                {/* Dashboard preview */}
-                <div className="bg-[#111827] border border-white/10 rounded-2xl p-5 text-left shadow-2xl shadow-black/40">
-                    <p className="text-xs text-slate-500 mb-4 font-medium">Dashboard</p>
-                    <div className="flex gap-3">
-                        <DashboardCard
-                            label="ACID Compliance"
-                            value="100% ACID Compliance"
-                            chart="progress"
-                        />
-                        <DashboardCard
-                            label="Latency"
-                            value="&lt;100ms Latency"
-                            chart="sparkline"
-                        />
-                        <DashboardCard
-                            label="Cache"
-                            value="Redis-Powered Performance"
-                            chart="bar"
-                        />
+            {/* ── DASHBOARD ── */}
+            <div className="bg-[#0a0f1e] py-16">
+                <div className="max-w-5xl mx-auto px-8">
+                    <div className="bg-[#111827] border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
+                        <p className="text-xs text-slate-500 mb-5 font-medium uppercase tracking-wider">Dashboard</p>
+                        <div className="flex gap-4">
+                            <DashboardCard label="ACID Compliance" value="100% ACID Compliance" chart="progress" />
+                            <DashboardCard label="Latency" value="&lt;100ms Latency" chart="sparkline" />
+                            <DashboardCard label="Cache" value="Redis-Powered Performance" chart="bar" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -194,47 +356,15 @@ export default function HomePage() {
             <div className="bg-white py-20">
                 <div className="max-w-5xl mx-auto px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                            How it Works
-                        </h2>
+                        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">How it Works</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                        <Step
-                            number="1"
-                            title="Bid Comes In"
-                            description="User places bid. Server validates auction is active and bid is higher than current price."
-                            icon="🔄"
-                        />
-                        <Step
-                            number="4"
-                            title="Live Broadcast"
-                            description="Socket.io broadcasts new price to all connected users in under 100ms."
-                            icon="📡"
-                        />
-                        <Step
-                            number="2"
-                            title="Row-Level Lock"
-                            description="PostgreSQL locks the auction row with SELECT FOR UPDATE. No other request can touch it."
-                            icon="🔒"
-                        />
-                        <Step
-                            number="5"
-                            title="Cache Invalidated"
-                            description="Redis cache cleared instantly so next request fetches fresh data from PostgreSQL."
-                            icon="⚡"
-                        />
-                        <Step
-                            number="3"
-                            title="Atomic Commit"
-                            description="Bid inserted and price updated in one transaction. Either both happen or neither does."
-                            icon="🗄️"
-                        />
-                        <Step
-                            number="6"
-                            title="Winner Declared"
-                            description="When timer hits zero, the highest bidder wins. One winner, always. Guaranteed."
-                            icon="🏆"
-                        />
+                        <Step number="1" title="Bid Comes In" description="User places bid. Server validates auction is active and bid is higher than current price." />
+                        <Step number="4" title="Live Broadcast" description="Socket.io broadcasts new price to all connected users in under 100ms." />
+                        <Step number="2" title="Row-Level Lock" description="PostgreSQL locks the auction row with SELECT FOR UPDATE. No other request can touch it." />
+                        <Step number="5" title="Cache Invalidated" description="Redis cache cleared instantly so next request fetches fresh data from PostgreSQL." />
+                        <Step number="3" title="Atomic Commit" description="Bid inserted and price updated in one transaction. Either both happen or neither does." />
+                        <Step number="6" title="Winner Declared" description="When timer hits zero, the highest bidder wins. One winner, always. Guaranteed." />
                     </div>
                 </div>
             </div>
@@ -243,9 +373,7 @@ export default function HomePage() {
             <div className="bg-[#0f172a] py-20">
                 <div className="max-w-5xl mx-auto px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-2xl font-bold text-white tracking-tight">
-                            Tech Stack
-                        </h2>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">Tech Stack</h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <TechCard name="Node.js + Express" icon={siNodedotjs} description="REST API server" />
@@ -263,12 +391,7 @@ export default function HomePage() {
                 <div className="max-w-5xl mx-auto px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
                     <p>Hermes-RTB — Built from scratch as a systems engineering project</p>
                     <div className="flex items-center gap-4">
-                        <a
-                            href="https://github.com/karshs/Hermes-RTB"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="hover:text-slate-400 transition-colors"
-                        >
+                        <a href="https://github.com/karshs/Hermes-RTB" target="_blank" rel="noreferrer" className="hover:text-slate-400 transition-colors">
                             GitHub
                         </a>
                         <Link to="/auctions" className="hover:text-slate-400 transition-colors">
