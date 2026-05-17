@@ -1,5 +1,24 @@
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
+import { siNodedotjs, siPostgresql, siSocketdotio, siRedis, siJsonwebtokens, siRender } from 'simple-icons'
+
+// Render a Simple Icons SVG inline
+// forceWhite overrides brand color — needed for black-logo icons on dark backgrounds
+function SimpleIcon({ icon, size = 28, forceWhite = false }) {
+    return (
+        <svg
+            role="img"
+            viewBox="0 0 24 24"
+            width={size}
+            height={size}
+            fill={forceWhite ? '#ffffff' : `#${icon.hex}`}
+            xmlns="http://www.w3.org/2000/svg"
+            aria-label={icon.title}
+        >
+            <path d={icon.path} />
+        </svg>
+    )
+}
 
 // ── Bid ticker ────────────────────────────────────────────────────────────────
 function BidTicker() {
@@ -91,11 +110,11 @@ function Step({ number, title, description, icon }) {
 }
 
 // ── Tech card ─────────────────────────────────────────────────────────────────
-function TechCard({ name, logo, description }) {
+function TechCard({ name, icon, description, forceWhite = false }) {
     return (
         <div className="bg-[#1e293b] border border-white/10 rounded-xl p-5 flex flex-col items-center text-center gap-3 hover:border-blue-500/30 transition-colors">
-            <div className="w-10 h-10 flex items-center justify-center text-2xl">
-                {logo}
+            <div className="w-10 h-10 flex items-center justify-center">
+                <SimpleIcon icon={icon} size={32} forceWhite={forceWhite} />
             </div>
             <div>
                 <p className="text-sm font-semibold text-white">{name}</p>
@@ -229,12 +248,12 @@ export default function HomePage() {
                         </h2>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <TechCard name="Node.js + Express" logo="🟢" description="REST API server" />
-                        <TechCard name="PostgreSQL" logo="🐘" description="ACID transactions" />
-                        <TechCard name="Socket.io" logo="⚡" description="Real-time WebSockets" />
-                        <TechCard name="Redis" logo="🔴" description="Cache-aside pattern" />
-                        <TechCard name="JWT + bcryptjs" logo="🔐" description="Stateless auth" />
-                        <TechCard name="Render" logo="🚀" description="Production hosting" />
+                        <TechCard name="Node.js + Express" icon={siNodedotjs} description="REST API server" />
+                        <TechCard name="PostgreSQL" icon={siPostgresql} description="ACID transactions" />
+                        <TechCard name="Socket.io" icon={siSocketdotio} description="Real-time WebSockets" forceWhite />
+                        <TechCard name="Redis" icon={siRedis} description="Cache-aside pattern" />
+                        <TechCard name="JWT + bcryptjs" icon={siJsonwebtokens} description="Stateless auth" forceWhite />
+                        <TechCard name="Render" icon={siRender} description="Production hosting" />
                     </div>
                 </div>
             </div>
