@@ -1,7 +1,7 @@
 // All API calls go through /api prefix
-// In dev: Vite proxies /api → http://localhost:3000 (strips /api prefix)
-// In prod: Express serves the built client and handles /auth, /auctions directly
-const API_BASE = import.meta.env.PROD ? '' : '/api'
+// In dev: Vite proxies /api → http://localhost:3000
+// In prod: Express handles /api directly
+const API_BASE = '/api'
 
 const getToken = () => localStorage.getItem('token')
 

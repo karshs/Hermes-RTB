@@ -29,8 +29,8 @@ app.use(cors());
 app.use(express.json());
 
 // API routes
-app.use('/auth', authRoutes);
-app.use('/auctions', auctionRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/auctions', auctionRoutes);
 
 if (isProd) {
     // Serve the built React app

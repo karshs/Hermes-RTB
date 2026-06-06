@@ -10,7 +10,6 @@ export default defineConfig({
             // not browser page navigations. We use /api prefix to avoid conflicts.
             '/api': {
                 target: 'http://localhost:3000',
-                rewrite: (path) => path.replace(/^\/api/, ''),
             },
             '/socket.io': {
                 target: 'http://localhost:3000',
