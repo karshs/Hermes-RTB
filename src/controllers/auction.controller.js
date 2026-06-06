@@ -91,18 +91,20 @@ const getAuctionById = async (req, res) => {
         const bidResult = await pool.query(
             `SELECT 
         b.amount,
+        b.created_at AS time,
         u.username AS bidder
        FROM bids b
        JOIN users u ON b.user_id = u.id
        WHERE b.auction_id = $1
        ORDER BY b.amount DESC
-       LIMIT 1`,
+       LIMIT 5`,
             [id]
         );
 
         const data = {
             ...auctionResult.rows[0],
-            highest_bid: bidResult.rows[0] || null
+            highest_bid: bidResult.rows[0] || null,
+            recent_bids: bidResult.rows
         };
 
         // 3. Store in Redis for 10 seconds

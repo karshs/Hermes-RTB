@@ -37,20 +37,25 @@ function useCountdown(endTime) {
 function BidItem({ amount, bidder, time, isTop }) {
     return (
         <div
-            className={`flex items-center justify-between px-4 py-3 rounded-lg border text-sm animate-[slideIn_0.3s_ease] ${isTop
+            className={`relative flex items-center justify-between px-4 py-3 rounded-lg border text-sm animate-[slideIn_0.3s_ease] overflow-hidden ${isTop
                 ? 'border-blue-500/40 bg-blue-500/5'
                 : 'border-white/5 bg-white/[0.02]'
                 }`}
         >
-            <div>
-                <span className={`font-semibold ${isTop ? 'text-blue-400' : 'text-white'}`}>
-                    ₹{Number(amount).toLocaleString()}
+            {isTop && (
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-sweep" />
+            )}
+            <div className="relative z-10 flex w-full justify-between items-center">
+                <div>
+                    <span className={`font-semibold ${isTop ? 'text-blue-400' : 'text-white'}`}>
+                        ₹{Number(amount).toLocaleString()}
+                    </span>
+                    <span className="text-slate-500 ml-2">by {bidder}</span>
+                </div>
+                <span className="text-xs text-slate-600">
+                    {new Date(time).toLocaleTimeString()}
                 </span>
-                <span className="text-slate-500 ml-2">by {bidder}</span>
             </div>
-            <span className="text-xs text-slate-600">
-                {new Date(time).toLocaleTimeString()}
-            </span>
         </div>
     )
 }
@@ -94,7 +99,15 @@ export default function AuctionDetailPage() {
                 const a = res.data
                 setAuction(a)
                 setCurrentPrice(Number(a.current_price))
-                if (a.highest_bid) {
+                if (a.recent_bids && a.recent_bids.length > 0) {
+                    setHighestBidder(a.recent_bids[0].bidder)
+                    setBids(a.recent_bids.map((bid, i) => ({
+                        amount: bid.amount,
+                        bidder: bid.bidder,
+                        time: bid.time,
+                        isTop: i === 0,
+                    })))
+                } else if (a.highest_bid) {
                     setHighestBidder(a.highest_bid.bidder)
                     setBids([{
                         amount: a.highest_bid.amount,
@@ -120,7 +133,7 @@ export default function AuctionDetailPage() {
         setBids((prev) => [
             { amount: data.new_current_price, bidder: data.bidder, time: data.timestamp, isTop: true },
             ...prev.map((b) => ({ ...b, isTop: false })),
-        ])
+        ].slice(0, 5))
     }, [])
 
     useSocket(id, { onNewBid: handleNewBid })
@@ -145,7 +158,7 @@ export default function AuctionDetailPage() {
             setBids((prev) => [
                 { amount, bidder: user.username, time: new Date(), isTop: true },
                 ...prev.map((b) => ({ ...b, isTop: false })),
-            ])
+            ].slice(0, 5))
             // Refresh balance in navbar
             refreshUser()
         } catch (err) {

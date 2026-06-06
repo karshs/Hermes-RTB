@@ -24,10 +24,15 @@ export default {
                     from: { transform: 'translateX(0)' },
                     to: { transform: 'translateX(-50%)' },
                 },
+                sweep: {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(100%)' },
+                },
             },
             animation: {
                 slideIn: 'slideIn 0.3s ease',
                 ticker: 'ticker 18s linear infinite',
+                sweep: 'sweep 2s ease-in-out infinite',
             },
         },
     },
