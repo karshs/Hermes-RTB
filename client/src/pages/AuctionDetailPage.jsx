@@ -143,8 +143,9 @@ export default function AuctionDetailPage() {
         setBidError('')
         setBidSuccess('')
         const amount = parseFloat(bidAmount)
-        if (!amount || amount <= priceRef.current) {
-            setBidError(`Bid must be higher than ₹${priceRef.current.toLocaleString()}`)
+        const minBid = priceRef.current + Number(auction.bid_increment || 1)
+        if (!amount || amount < minBid) {
+            setBidError(`Bid must be at least ₹${minBid.toLocaleString()}`)
             return
         }
         setBidLoading(true)
@@ -331,8 +332,8 @@ export default function AuctionDetailPage() {
                                         type="number"
                                         value={bidAmount}
                                         onChange={(e) => setBidAmount(e.target.value)}
-                                        placeholder={`More than ₹${currentPrice.toLocaleString()}`}
-                                        min={currentPrice + 1}
+                                        placeholder={`At least ₹${(currentPrice + Number(auction.bid_increment || 1)).toLocaleString()}`}
+                                        min={currentPrice + Number(auction.bid_increment || 1)}
                                         className="w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                     <button
@@ -343,7 +344,7 @@ export default function AuctionDetailPage() {
                                         {bidLoading ? 'Placing bid...' : 'Place Bid'}
                                     </button>
                                     <p className="text-xs text-slate-600 text-center">
-                                        Must be higher than ₹{currentPrice.toLocaleString()}
+                                        Must be at least ₹{(currentPrice + Number(auction.bid_increment || 1)).toLocaleString()}
                                     </p>
                                 </form>
                             )}

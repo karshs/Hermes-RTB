@@ -1,0 +1,1 @@
+ALTER TABLE auctions ADD COLUMN bid_increment DECIMAL(10, 2) NOT NULL DEFAULT 1.00;

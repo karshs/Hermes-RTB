@@ -125,14 +125,14 @@ const getAuctionById = async (req, res) => {
 // POST /auctions - create an auction
 const createAuction = async (req, res) => {
     try {
-        const { title, description, start_price, end_time } = req.body;
+        const { title, description, start_price, end_time, bid_increment } = req.body;
         const seller_id = req.user.id;
 
         // Validate required fields
-        if (!title || !start_price || !end_time) {
+        if (!title || !start_price || !end_time || !bid_increment) {
             return res.status(400).json({
                 success: false,
-                message: 'Title, start price and end time are required'
+                message: 'Title, start price, end time, and bid increment are required'
             });
         }
 
@@ -146,10 +146,10 @@ const createAuction = async (req, res) => {
 
         const result = await pool.query(
             `INSERT INTO auctions 
-        (title, description, start_price, current_price, seller_id, end_time)
-       VALUES ($1, $2, $3, $3, $4, $5)
+        (title, description, start_price, current_price, seller_id, end_time, bid_increment)
+       VALUES ($1, $2, $3, $3, $4, $5, $6)
        RETURNING *`,
-            [title, description, start_price, seller_id, end_time]
+            [title, description, start_price, seller_id, end_time, bid_increment]
         );
 
         res.status(201).json({
@@ -222,12 +222,13 @@ const placeBid = async (req, res) => {
             });
         }
 
-        // Check bid is higher than current price
-        if (parseFloat(amount) <= parseFloat(auction.current_price)) {
+        // Check bid is higher than current price + bid_increment
+        const minRequiredBid = parseFloat(auction.current_price) + parseFloat(auction.bid_increment);
+        if (parseFloat(amount) < minRequiredBid) {
             await client.query('ROLLBACK');
             return res.status(400).json({
                 success: false,
-                message: `Bid must be higher than current price of ${auction.current_price}`
+                message: `Bid must be at least ${minRequiredBid}`
             });
         }
 

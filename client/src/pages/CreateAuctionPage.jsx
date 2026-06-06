@@ -9,6 +9,7 @@ export default function CreateAuctionPage() {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [startPrice, setStartPrice] = useState('')
+    const [bidIncrement, setBidIncrement] = useState('1')
     const [endTime, setEndTime] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -25,6 +26,8 @@ export default function CreateAuctionPage() {
         if (!title.trim()) return setError('Title is required')
         if (!startPrice || Number(startPrice) <= 0)
             return setError('Starting price must be greater than 0')
+        if (!bidIncrement || Number(bidIncrement) <= 0)
+            return setError('Bid increment must be greater than 0')
         if (!endTime) return setError('End time is required')
         if (new Date(endTime) <= new Date())
             return setError('End time must be in the future')
@@ -35,6 +38,7 @@ export default function CreateAuctionPage() {
                 title: title.trim(),
                 description: description.trim(),
                 start_price: Number(startPrice),
+                bid_increment: Number(bidIncrement),
                 end_time: new Date(endTime).toISOString(),
             })
             navigate(`/auctions/${res.data.id}`)
@@ -104,23 +108,44 @@ export default function CreateAuctionPage() {
                         </div>
 
                         {/* Starting price */}
-                        <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                                Starting Price (₹) <span className="text-red-400">*</span>
-                            </label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
-                                    ₹
-                                </span>
-                                <input
-                                    type="number"
-                                    value={startPrice}
-                                    onChange={(e) => setStartPrice(e.target.value)}
-                                    placeholder="1000"
-                                    min="1"
-                                    step="1"
-                                    className="w-full bg-[#0f172a] border border-white/10 rounded-lg pl-7 pr-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                                />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                                    Starting Price (₹) <span className="text-red-400">*</span>
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                                        ₹
+                                    </span>
+                                    <input
+                                        type="number"
+                                        value={startPrice}
+                                        onChange={(e) => setStartPrice(e.target.value)}
+                                        placeholder="1000"
+                                        min="1"
+                                        step="1"
+                                        className="w-full bg-[#0f172a] border border-white/10 rounded-lg pl-7 pr-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                                    Min Bid Increment (₹) <span className="text-red-400">*</span>
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                                        ₹
+                                    </span>
+                                    <input
+                                        type="number"
+                                        value={bidIncrement}
+                                        onChange={(e) => setBidIncrement(e.target.value)}
+                                        placeholder="10"
+                                        min="1"
+                                        step="1"
+                                        className="w-full bg-[#0f172a] border border-white/10 rounded-lg pl-7 pr-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                </div>
                             </div>
                         </div>
 
